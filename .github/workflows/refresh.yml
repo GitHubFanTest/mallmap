@@ -1,0 +1,29 @@
+# .github/workflows/refresh.yml
+name: refresh malls
+on:
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python refresh.py
+      - run: |
+          python merge.py
+          mv malls.geojson all-malls.geojson
+          python clean.py
+      - run: |
+          git config user.name "mallmap bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add tiles all-malls.geojson malls-clean.geojson
+          git diff --cached --quiet || git commit -m "monthly refresh"
+          git push

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mallmap</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<style>
+html, body, #map { height: 100%; margin: 0; }
+#count { position: absolute; z-index: 1000; top: 10px; right: 10px; background: #fff; padding: 6px 10px; border-radius: 6px; font: 14px sans-serif; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="count">loading...</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script>
+const map = L.map("map").setView([14.6, 121], 6);
+
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "© OpenStreetMap contributors"
+}).addTo(map);
+
+function popup(p) {
+  const box = document.createElement("div");
+  const title = document.createElement("b");
+  title.textContent = p.name;
+  box.appendChild(title);
+  if (p.operator) {
+    box.appendChild(document.createElement("br"));
+    box.appendChild(document.createTextNode(p.operator));
+  }
+  if (p.website && /^https?:\/\//.test(p.website)) {
+    box.appendChild(document.createElement("br"));
+    const a = document.createElement("a");
+    a.href = p.website;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = "website";
+    box.appendChild(a);
+  }
+  return box;
+}
+
+fetch("all-malls.geojson")
+  .then((r) => r.json())
+  .then((data) => {
+    const cluster = L.markerClusterGroup({ chunkedLoading: true });
+    const markers = data.features.map((f) => {
+      const [lon, lat] = f.geometry.coordinates;
+      return L.marker([lat, lon]).bindPopup(() => popup(f.properties));
+    });
+    cluster.addLayers(markers);
+    map.addLayer(cluster);
+    document.getElementById("count").textContent = markers.length + " malls";
+  });
+</script>
+</body>
+</html>
