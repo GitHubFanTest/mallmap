@@ -19,6 +19,7 @@ jobs:
       - run: python refresh.py
       - run: |
           python merge.py
+          python -c "import json,sys; n=len(json.load(open('malls.geojson'))['features']); print('merged', n); sys.exit(0 if n > 60000 else 1)"
           mv malls.geojson all-malls.geojson
           python clean.py
       - run: |
